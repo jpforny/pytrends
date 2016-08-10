@@ -8,6 +8,8 @@ import re
 import sys
 import requests
 import json
+import os
+import logging
 from fake_useragent import UserAgent
 if sys.version_info[0] == 2:  # Python 2
     from cookielib import CookieJar
@@ -22,6 +24,9 @@ else:  # Python 3
     from urllib.parse import quote
     from urllib.request import build_opener, HTTPCookieProcessor
 
+# Logging
+logger = logging.getLogger(os.path.basename(sys.argv[0]))
+logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
 class pyGTrends(object):
     """
@@ -37,7 +42,7 @@ class pyGTrends(object):
             'PersistentCookie': 'yes',
             'Email': username,
             'Passwd': password}
-        # provide fake user agent to look like a desktop brower
+        # provide fake user agent to look like a desktop browser
         self.fake_ua = UserAgent()
         self.headers = [
             ('Referrer', 'https://www.google.com/accounts/ServiceLoginBoxAuth'),
@@ -135,8 +140,90 @@ class pyGTrends(object):
         # response is invalid json but if you strip off ")]}'," from the front it is then valid
         json_data = json.loads(raw_data[5:].decode())
         return json_data
+        
+    def get_trending_stories(self, hl='en-US', tz=None, cat=None, fi=None, fs=None, geo=None, ri=None, rs=None, sort=None):
+        """
+        Example URL:
+        https://www.google.com/trends/api/stories/latest?hl=pt-BR&tz=180&cat=b&fi=9&fs=9&geo=BR&ri=150&rs=10&sort=0
+        """
+        
+        if tz is not None:
+            tz_param = '&tz=' + tz
+        else:
+            tz_param = ''
+        if cat is not None:
+            cat_param = '&cat=' + cat
+        else:
+            cat_param = ''
+        if fi is not None:
+            fi_param = '&fi=' + fi
+        else:
+            fi_param = ''
+        if fs is not None:
+            fs_param = '&fs=' + fs
+        else:
+            fs_param = ''
+        if geo is not None:
+            geo_param = '&geo=' + geo
+        else:
+            geo_param = ''
+        if ri is not None:
+            ri_param = 'ri=' + ri
+        else:
+            ri_param = ''
+        if rs is not None:
+            rs_param = '&rs=' + rs
+        else:
+            rs_param = ''
+        if sort is not None:
+            sort_param = '&sort=' + sort
+        else:
+            sort_param = ''
+        hl_param = '&hl=' + hl
+        
+        # Limit of stories
+        ri_param = "&ri=200"
+        # Unknown (As big as possible)
+        rs_param = "&rs=200"
+        # Default parameters
+        tz_param = "&tz=180"
+        fi_param = "&fi=9"
+        fs_param = "&fs=9"
+        sort_param = "&sort=0"
 
+        combined_params = hl_param + tz_param + cat_param + fi_param + fs_param + geo_param + ri_param + rs_param + sort_param
+        
+        url = "https://www.google.com/trends/api/stories/latest?" + combined_params
+        logger.info("Requesting latest trending stories {}".format(url))
 
+        raw_data = self.opener.open(url).read()
+        latest_trends_json = json.loads(raw_data[5:].decode())
+        return latest_trends_json
+        
+        def get_story(self, hl=None, tz=None, ids=None):
+            """
+            Example URL:
+            https://www.google.com/trends/api/stories/summary?hl=pt-BR&tz=180&id=BR_lnk_-QxwwAAwAACJfM_pt&id=BR_lnk_xZVxwAAwAAC05M_pt&id=BR_lnk_rJt3wAAwAADb6M_pt&id=BR_lnk_MaVwwAAwAABB1M_pt&id=BR_lnk_w6VxwAAwAACy1M_pt&id=BR_lnk_TmFxwAAwAAA_EM_pt&id=BR_lnk_NWJswAAwAABZEM_pt&id=BR_lnk_lpOBwAAwAAAX4M_pt&id=BR_lnk_GXSGwAAwAACfBM_pt&id=BR_lnk_a3qAwAAwAADrCM_pt&id=BR_lnk_Pr98wAAwAABCzM_pt&id=BR_lnk_jaVvwAAwAADi1M_pt&id=BR_lnk_GKFwwAAwAABo0M_pt&id=BR_lnk_Cbx4wAAwAABxzM_pt&id=BR_lnk_6SN0wAAwAACdUM_pt&id=BR_lnk_FTd4wAAwAABtRM_pt&id=BR_lnk_LIduwAAwAABC9M_pt&id=BR_lnk_ALdywAAwAAByxM_pt&id=BR_lnk_sVaBwAAwAAAwJM_pt&id=BR_lnk_MdpxwAAwAABAqM_pt&id=BR_lnk_d212wAAwAAABHM_pt&id=BR_lnk_iUVnwAAwAADuNM_pt&id=BR_lnk_1sd0wAAwAACitM_pt&id=BR_lnk_LOFvwAAwAABDkM_pt
+            """
+            
+            if tz is not None:
+                tz_param = '&tz=' + tz
+            else:
+                tz_param = ''
+            hl_param = '&hl=' + hl
+        
+            # Default parameters
+            tz_param = "&tz=180"
+
+            combined_params = hl_param + tz_param + ids
+        
+            print("Now downloading information for:")
+            print("https://www.google.com/trends/api/stories/summary?" + combined_params)
+
+            raw_data = self.opener.open("https://www.google.com/trends/api/stories/summary?" + combined_params).read()
+            json_data = json.loads(raw_data[5:].decode())
+            return json_data
+        
 def parse_data(data):
     """
     Parse data in a Google Trends CSV export (as `str`) into JSON format

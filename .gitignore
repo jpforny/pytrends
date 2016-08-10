@@ -3,3 +3,5 @@
 build/
 dist/
 pytrends.egg-info/
+env/
+*.csv
