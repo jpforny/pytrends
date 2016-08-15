@@ -30,7 +30,7 @@ def get_trends(connector):
     
     return result
 
-def get_day_trends(google_username, google_password):
+def get_day_trends(google_username='', google_password=''):
 
     logger.info("Connecting to Google as {}".format(google_username))
     connector = pyGTrends(google_username, google_password)
@@ -66,10 +66,10 @@ def get_day_trends(google_username, google_password):
 
 if __name__ == u'__main__':
     logger.info("Running %s" % ' '.join(sys.argv))
-    user = sys.argv[1] if len(sys.argv) > 1 else "email@gmail.com"
-    password = sys.argv[2] if len(sys.argv) > 2 else "password"
+    # user = sys.argv[1] if len(sys.argv) > 1 else "email@gmail.com"
+    # password = sys.argv[2] if len(sys.argv) > 2 else "password"
     
-    schedule.every().day.at("05:00").do(get_day_trends(user, password))
+    schedule.every().day.at("05:00").do(get_day_trends)
     while True:
         schedule.run_pending()
         time.sleep(1)
