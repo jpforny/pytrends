@@ -2,11 +2,12 @@ import time
 import os
 import sys
 import logging
+import schedule
 
 import pandas as pd
 
 from random import randint
-from time import ctime
+from time import ctime, strftime
 from pytrends.pyGTrends import pyGTrends
 from pandas.io.json import json_normalize
 
@@ -29,9 +30,7 @@ def get_trends(connector):
     
     return result
 
-if __name__ == u'__main__':
-    google_username = "an_email@gmail.com"
-    google_password = "password"
+def get_day_trends(google_username, google_password):
 
     logger.info("Connecting to Google as {}".format(google_username))
     connector = pyGTrends(google_username, google_password)
@@ -39,9 +38,14 @@ if __name__ == u'__main__':
   
     df = pd.DataFrame()
     counter = 0
-
+    
+    kill_at = pd.Timestamp(strftime("%Y-%m-%d 21:00:00"))
     try:
         while True:
+            now = pd.Timestamp(ctime())
+            if now > kill_at:
+                break
+                
             current_trends = get_trends(connector)
             df = df.append(current_trends)
             
@@ -59,3 +63,14 @@ if __name__ == u'__main__':
     end = str(df.iloc[df.shape[0] - 1]['timestamp'])
     df.index.name = 'rank'
     df.to_csv("trends[" + beginning + ", " + end + "].csv")
+
+if __name__ == u'__main__':
+    logger.info("Running %s" % ' '.join(sys.argv))
+    user = sys.argv[1] if len(sys.argv) > 1 else "email@gmail.com"
+    password = sys.argv[2] if len(sys.argv) > 2 else "password"
+    
+    schedule.every().day.at("05:00").do(get_day_trends(user, password))
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
+    

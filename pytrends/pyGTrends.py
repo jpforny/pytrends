@@ -198,6 +198,8 @@ class pyGTrends(object):
 
         raw_data = self.opener.open(url).read()
         latest_trends_json = json.loads(raw_data[5:].decode())
+        logger.info("Latest trending stories successfully fetched")
+        
         return latest_trends_json
         
         def get_story(self, hl=None, tz=None, ids=None):
