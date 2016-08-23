@@ -76,9 +76,10 @@ class pyGTrends(object):
 
         self.login_params['GALX'] = m.group('galx')
         params = urlencode(self.login_params).encode('utf-8')
-        self.opener.open(self.url_ServiceLoginBoxAuth, params)
-        self.opener.open(self.url_CookieCheck)
-        self.opener.open(self.url_PrefCookie)
+        # self.opener.open(self.url_ServiceLoginBoxAuth, params)
+        # HTTP 400 Bad Request since 23/08/2016 (CookieCheck)
+        # self.opener.open(self.url_CookieCheck)
+        # self.opener.open(self.url_PrefCookie)
 
     def request_report(self, keywords, hl='en-US', cat=None, geo=None, date=None, tz=None, gprop=None):
         query_param = 'q=' + quote(keywords)
@@ -192,39 +193,122 @@ class pyGTrends(object):
         sort_param = "&sort=0"
 
         combined_params = hl_param + tz_param + cat_param + fi_param + fs_param + geo_param + ri_param + rs_param + sort_param
-        
         url = "https://www.google.com/trends/api/stories/latest?" + combined_params
+        
         logger.info("Requesting latest trending stories {}".format(url))
-
         raw_data = self.opener.open(url).read()
         latest_trends_json = json.loads(raw_data[5:].decode())
         logger.info("Latest trending stories successfully fetched")
         
         return latest_trends_json
         
-        def get_story(self, hl=None, tz=None, ids=None):
-            """
-            Example URL:
-            https://www.google.com/trends/api/stories/summary?hl=pt-BR&tz=180&id=BR_lnk_-QxwwAAwAACJfM_pt&id=BR_lnk_xZVxwAAwAAC05M_pt&id=BR_lnk_rJt3wAAwAADb6M_pt&id=BR_lnk_MaVwwAAwAABB1M_pt&id=BR_lnk_w6VxwAAwAACy1M_pt&id=BR_lnk_TmFxwAAwAAA_EM_pt&id=BR_lnk_NWJswAAwAABZEM_pt&id=BR_lnk_lpOBwAAwAAAX4M_pt&id=BR_lnk_GXSGwAAwAACfBM_pt&id=BR_lnk_a3qAwAAwAADrCM_pt&id=BR_lnk_Pr98wAAwAABCzM_pt&id=BR_lnk_jaVvwAAwAADi1M_pt&id=BR_lnk_GKFwwAAwAABo0M_pt&id=BR_lnk_Cbx4wAAwAABxzM_pt&id=BR_lnk_6SN0wAAwAACdUM_pt&id=BR_lnk_FTd4wAAwAABtRM_pt&id=BR_lnk_LIduwAAwAABC9M_pt&id=BR_lnk_ALdywAAwAAByxM_pt&id=BR_lnk_sVaBwAAwAAAwJM_pt&id=BR_lnk_MdpxwAAwAABAqM_pt&id=BR_lnk_d212wAAwAAABHM_pt&id=BR_lnk_iUVnwAAwAADuNM_pt&id=BR_lnk_1sd0wAAwAACitM_pt&id=BR_lnk_LOFvwAAwAABDkM_pt
-            """
-            
-            if tz is not None:
-                tz_param = '&tz=' + tz
-            else:
-                tz_param = ''
-            hl_param = '&hl=' + hl
+    def get_story_summary(self, hl=None, tz=None, ids=None):
+        """
+        Example URL:
+        https://www.google.com/trends/api/stories/summary?hl=pt-BR&tz=180&id=BR_lnk_-QxwwAAwAACJfM_pt&id=BR_lnk_xZVxwAAwAAC05M_pt&id=BR_lnk_rJt3wAAwAADb6M_pt
+        """
         
-            # Default parameters
+        if tz is not None:
+            tz_param = '&tz=' + tz
+        else:
             tz_param = "&tz=180"
+        hl_param = '&hl=' + hl
 
-            combined_params = hl_param + tz_param + ids
+        combined_params = hl_param + tz_param + ids
+        url = "https://www.google.com/trends/api/stories/summary?" + combined_params
         
-            print("Now downloading information for:")
-            print("https://www.google.com/trends/api/stories/summary?" + combined_params)
+        logger.info("Requesting story summaries from {}".format(url))
+        raw_data = self.opener.open(url).read()
+        json_data = json.loads(raw_data[5:].decode())
+        return json_data
+        
+    def get_story(self, id=None, hl=None, tz=None, sw=None):
+        """
+        Example URL:
+        https://www.google.com/trends/api/stories/BR_lnk_om7cwAAwAAB-HM_pt?hl=en-US&tz=180&sw=10
+        
+        """
+        
+        if id is not None:
+            id_param = id
+        else:
+             id = ''
+        if tz is not None:
+            tz_param = '&tz=' + tz
+        else:
+            tz_param = "&tz=180"
+        if sw is not None:
+            sw_param = '&sw=' + sw
+        else:
+            sw_param = ''
+        hl_param = '&hl=' + hl
 
-            raw_data = self.opener.open("https://www.google.com/trends/api/stories/summary?" + combined_params).read()
-            json_data = json.loads(raw_data[5:].decode())
-            return json_data
+        combined_params = id_param + hl_param + tz_param + sw_param
+        url = "https://www.google.com/trends/api/stories/" + combined_params
+        
+        logger.info("Requesting story {} information from {}".format(id_param, url))
+        raw_data = self.opener.open(url).read()
+        json_data = json.loads(raw_data[5:].decode())
+        return json_data
+            
+    def get_story_timeline(self, hl=None, tz=None, req=None, token=None):
+        """
+        Example URL:
+        https://www.google.com/trends/api/widgetdata/timeline?hl=en-US&tz=180&req=%7B%22geo%22:%7B%22country%22:%22BR%22%7D,%22time%22:%222016-08-14T00%5C%5C:00%5C%5C:00+2016-08-16T01%5C%5C:40%5C%5C:00%22,%22resolution%22:%22HOUR%22,%22mid%22:%5B%22%2Fm%2F01b571%22%5D,%22locale%22:%22en-US%22%7D&token=APP6_UEAAAAAV7PDC0OSkUeHhRfsfOEeEnLzr3v9GdWr&tz=180                
+        FIXME: It has a duplicate tz parameter at the end 
+        """
+
+        if tz is not None:
+            tz_param = '&tz=' + tz
+        else:
+            tz_param = "&tz=180"
+        if req is not None:
+            req_param = '&req=' + req
+        else:
+             req_param = ''
+        if token is not None:
+            token_param = '&token=' + token
+        else:
+            token_param = ''
+        hl_param = '&hl=' + hl
+        
+        combined_params = hl_param + tz_param + req_param + token_param
+        url = "https://www.google.com/trends/api/widgetdata/timeline?" + combined_params
+    
+        logger.info("Requesting story timeline from {}".format(url))
+        raw_data = self.opener.open(url).read()
+        json_data = json.loads(raw_data[5:].decode())
+        return json_data
+        
+    def get_story_related_queries(self, hl=None, tz=None, req=None, token=None):
+        """
+        Example URL:
+        https://www.google.com/trends/api/widgetdata/relatedqueries?token=APP6_UEAAAAAV7PDC5R1lquTAi8HM0EX_zFwR7h9bhC9&hl=en-US&tz=180
+        
+        TODO: Pass request payload
+        """
+
+        if tz is not None:
+            tz_param = '&tz=' + tz
+        else:
+            tz_param = "&tz=180"
+        if req is not None:
+            req_param = '&req=' + req
+        else:
+             req_param = ''
+        if token is not None:
+            token_param = '&token=' + token
+        else:
+            token_param = ''
+        hl_param = '&hl=' + hl
+        
+        combined_params = hl_param + tz_param + req_param + token_param
+        url = "https://www.google.com/trends/api/widgetdata/relatedqueries?" + combined_params
+
+        logger.info("Requesting story timeline from {}".format(url))
+        raw_data = self.opener.open(url).read()
+        json_data = json.loads(raw_data[5:].decode())
+        return json_data
         
 def parse_data(data):
     """
