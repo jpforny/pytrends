@@ -80,7 +80,7 @@ def get_day_trends():
             
             logger.info("Current job took {}".format(spent_time))
             
-            sleep_time = 60 - spent_time - spent_time_connection
+            sleep_time = 60 - spent_time - spent_time_connection - 0.006
             spent_time_connection = 0
             logger.info("Sleeping {}\n".format(sleep_time))
             time.sleep(sleep_time)
@@ -99,7 +99,7 @@ def main():
     schedule.every().day.at("05:00").do(get_day_trends)
     while True:
         schedule.run_pending()
-        time.sleep(1)
+        time.sleep(0.0001)
         
 if __name__ == u'__main__':
     logger.info("Running %s" % ' '.join(sys.argv))
