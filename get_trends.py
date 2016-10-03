@@ -84,7 +84,7 @@ def get_day_trends():
                 spent_time_connection = 0
             else:
                 time.sleep(60 - spent_time - (start % 1))
-    except:
+except:
         logger.error("Exiting: " + str(sys.exc_info()[0]))
         logger.error(traceback.format_exc())
 
