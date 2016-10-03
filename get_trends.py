@@ -25,7 +25,6 @@ def get_trends(connector):
       
     cat_param = 'b'
     geo_param = 'BR'
-    hl_param = 'pt-BR'
     
     # request_timestamp = pd.Timestamp(datetime.datetime.fromtimestamp(ntpclient.request('br.pool.ntp.org').tx_time))
     request_timestamp = pd.Timestamp(ctime())
@@ -46,6 +45,7 @@ def get_day_trends():
     # Google Trends client
     logger.info("Connecting to Google")
     connector = pyGTrends('', '')
+    logger.info("Connected to Google")
     
     df = pd.DataFrame()
     
@@ -53,17 +53,16 @@ def get_day_trends():
     
     kill_at = pd.Timestamp(strftime("%Y-%m-%d 21:00:00"))
     
-    spent_time_connection = time.time() - start
+    spent_time_connection = time.time() - start - (start % 1)
     
     try:
         while True:
 
             start = time.time()
-
-            logger.info("Starting at {}".format(start))
             
             now = pd.Timestamp(ctime())
             if now > kill_at:
+                logger.info("Killing job...")
                 break
                 
             current_trends = get_trends(connector)
@@ -78,12 +77,13 @@ def get_day_trends():
             spent_time = time.time() - start 
             
             
-            logger.info("Current job took {}".format(spent_time))
+            logger.info("Current job took {}\n".format(spent_time))
             
-            sleep_time = 60 - spent_time - spent_time_connection - 0.006
-            spent_time_connection = 0
-            logger.info("Sleeping {}\n".format(sleep_time))
-            time.sleep(sleep_time)
+            if spent_time_connection > 0:
+                time.sleep(60 - spent_time - spent_time_connection)
+                spent_time_connection = 0
+            else:
+                time.sleep(60 - spent_time - (start % 1))
     except:
         logger.error("Exiting: " + str(sys.exc_info()[0]))
         logger.error(traceback.format_exc())
@@ -95,16 +95,19 @@ def get_day_trends():
     
     logger.info("Saved day trends from {} to {}".format(beginning, end))
 
-def main():
-    schedule.every().day.at("05:00").do(get_day_trends)
+def main(start_at):
+    schedule.every().day.at(start_at).do(get_day_trends)
     while True:
         schedule.run_pending()
         time.sleep(0.0001)
         
 if __name__ == u'__main__':
     logger.info("Running %s" % ' '.join(sys.argv))
-    # user = sys.argv[1] if len(sys.argv) > 1 else "email@gmail.com"
-    # password = sys.argv[2] if len(sys.argv) > 2 else "password"
+   
+    global hl_param
+    hl_param = sys.argv[1] if len(sys.argv) > 1 else 'pt-BR'
+
+    start_at = sys.argv[2] if len(sys.argv) > 2 else '05:00'
     
-    main()
+    main(start_at)
     
