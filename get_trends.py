@@ -91,7 +91,7 @@ def get_day_trends():
     beginning = str(df.iloc[0]['timestamp'])
     end = str(df.iloc[df.shape[0] - 1]['timestamp'])
     df.index.name = 'rank'
-    df.to_csv("trends[" + beginning + ", " + end + "].csv")
+    df.to_csv("trends({})[{}, {}].csv".format(hl_param, beginning, end))
     
     logger.info("Saved day trends from {} to {}".format(beginning, end))
 
