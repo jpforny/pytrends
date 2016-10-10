@@ -20,14 +20,25 @@ logger = logging.getLogger(os.path.basename(sys.argv[0]))
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
 
 ntpclient = ntplib.NTPClient()
-    
+request_timestamp = None
+
 def get_trends(connector):
-      
+    global request_timestamp
+    
     cat_param = 'b'
     geo_param = 'BR'
     
-    # request_timestamp = pd.Timestamp(datetime.datetime.fromtimestamp(ntpclient.request('br.pool.ntp.org').tx_time))
-    request_timestamp = pd.Timestamp(ctime())
+    if request_timestamp is not None:
+        request_timestamp += pd.Timedelta(minutes=1);
+        logger.info("Request timestamp {}".format(request_timestamp))
+    else:
+        try:
+            request_timestamp = pd.Timestamp(datetime.datetime.fromtimestamp(ntpclient.request('br.pool.ntp.org').tx_time))
+            logger.info("Request timestamp from NTP {}".format(request_timestamp))
+        except:
+            logger.error(traceback.format_exc())
+            request_timestamp = pd.Timestamp(ctime())
+            logger.info("Request timestamp due to NTP failure {}".format(request_timestamp))
     
     data = connector.get_trending_stories(hl=hl_param, cat=cat_param, geo=geo_param)
     
