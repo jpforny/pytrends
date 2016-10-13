@@ -75,18 +75,20 @@ def get_day_trends():
             if now > kill_at:
                 logger.info("Killing job...")
                 break
-                
-            current_trends = get_trends(connector)
-            df = df.append(current_trends)
             
-            counter += current_trends.shape[0]
+            try:    
+                current_trends = get_trends(connector)
+                df = df.append(current_trends)
+                counter += current_trends.shape[0]
+            except URLError:
+                logger.error("Error requesting latest trends: {}".format(str(sys.exc_info()[0])))
+                logger.error(traceback.format_exc())
             
             # Print a status message
             if counter % 1000 == 0:
                 logger.info("{} stories fetched".format(counter))
             
             spent_time = time.time() - start 
-            
             
             logger.info("Current job took {}\n".format(spent_time))
             
