@@ -51,6 +51,8 @@ def get_trends(connector):
 
 def get_day_trends():
     
+    time.sleep(initial_sleep)
+    
     start = time.time()
     
     # Google Trends client
@@ -121,6 +123,9 @@ if __name__ == u'__main__':
     hl_param = sys.argv[1] if len(sys.argv) > 1 else 'pt-BR'
 
     start_at = sys.argv[2] if len(sys.argv) > 2 else '05:00'
+    
+    global initial_sleep
+    initial_sleep = sys.argv[3] if len(sys.argv) > 3 else 0
     
     main(start_at)
     
