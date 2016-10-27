@@ -82,7 +82,7 @@ def get_day_trends():
                 current_trends = get_trends(connector)
                 df = df.append(current_trends)
                 counter += current_trends.shape[0]
-            except URLError:
+            except:
                 logger.error("Error requesting latest trends: {}".format(str(sys.exc_info()[0])))
                 logger.error(traceback.format_exc())
             
