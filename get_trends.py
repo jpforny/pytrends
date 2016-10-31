@@ -51,7 +51,7 @@ def get_trends(connector):
 
 def get_day_trends():
     
-    time.sleep(initial_sleep)
+    time.sleep(float(initial_sleep))
     
     start = time.time()
     
