@@ -1,126 +1,314 @@
-pytrends
-=========
+# pytrends
 
-### About
+## Introduction
 
-**Pseudo API for Google Trends**
+Unofficial API for Google Trends
 
-* Allows simple interface for automating downloads of csv reports from Google Trends.
-* Main feature is to help trick google into thinking the script is actually a browser.
+Allows simple interface for automating downloading of reports from Google Trends. Main feature is to allow the script to login to Google on your behalf to enable a higher rate limit. Only good until Google changes their backend again :-P. When that happens feel free to contribute!
 
 
-* Only good until Google changes their backend again :-P
+## Table of contens
 
-**Installation**
+* [Installation](#installation)
 
-```pip install pytrends```
+* [API](#api)
 
-**Requirements**
+  * [API Methods](#api-methods)
+
+  * [Common API parameters](#common-api-parameters)
+
+    * [Interest Over Time](#interest-over-time)
+    * [Historical Hourly Interest](#historical-hourly-interest)
+    * [Interest by Region](#interest-by-region)
+    * [Related Topics](#related-topics)
+    * [Related Queries](#related-queries)
+    * [Trending Searches](#trending-searches)
+    * [Top Charts](#top-charts)
+    * [Suggestions](#suggestions)
+
+  * [Caveats](#caveats)
+
+* [Credits](#credits)
+
+## Installation
+
+    pip install pytrends
+
+## Requirements
+
 * Written for both Python 2.7+ and Python 3.3+
-* Requires a google account to use.
-* Requires fake-useragent python library (installed automatically with pip)
+* Requires Requests, lxml, Pandas
 
-**Caveats**
-* This is not an official or supported API
-* Google may change aggregation level for items with very large or very small search volume
+<sub><sup>[back to top](#pytrends)</sub></sup>
 
-## Connect to Google
-**pyGTrends(google_username, google_password)**
+## API
 
-**Parameters**
-* google_username
-  - a valid gmail address
-* google_password
-  - password for the gmail account
+### Connect to Google
 
-### Request a Report
-**request_report(keywords, hl='en-US', cat=None, geo=None, date=None, gprop=None)**
+    from pytrends.request import TrendReq
 
-**Parameters**
-* Keywords
-  - the words to get data for
-  - Example ```"Pizza"```
-  - Up to five terms with a comma and space: ```"Pizza, Italian, Spaghetti, Breadsticks, Sausage"```
-* Advanced Keywords
-  - When using Google Trends dashboard Google may provide suggested narrowed search terms. 
-  - For example ```"iron"``` will have a drop down of ```"Iron Chemical Element, Iron Cross, Iron Man, etc"```. 
-  - Find the encoded topic by using the get_suggestions() function and choose the most relevant one for you. 
-  - For example: ```https://www.google.com/trends/explore#q=%2Fm%2F025rw19&cmpt=q```
-  - ```"%2Fm%2F025rw19"``` is the topic "Iron Chemical Element" to use this with pytrends
-* hl
-  - Language to return result headers in
-  - Two letter language abbreviation
-  - For example English is ```"en"```
-  - Defaults to english
-* cat
+    pytrends = TrendReq(hl='en-US', tz=360)
+
+or if you want to use proxies as you are blocked due to Google rate limit:
+
+
+    from pytrends.request import TrendReq
+
+    pytrends = TrendReq(hl='en-US', tz=360, proxies = {'https': 'https://34.203.233.13:80'})
+
+Note: only https proxies will work, and you need to add the port number after the proxy ip address
+
+### Build Payload
+    kw_list = ["Blockchain"]
+    pytrends.build_payload(kw_list, cat=0, timeframe='today 5-y', geo='', gprop='')
+
+Parameters
+
+* `kw_list`
+
+  - *Required*
+  - Keywords to get data for
+
+
+<sub><sup>[back to top](#API)</sub></sup>
+
+## API Methods
+
+The following API methods are available:
+
+* [Interest Over Time](#interest-over-time): returns historical, indexed data for when the keyword was searched most as shown on Google Trends' Interest Over Time section.
+
+* [Historical Hourly Interest](#historical-hourly-interest): returns historical, indexed, hourly data for when the keyword was searched most as shown on Google Trends' Interest Over Time section. It sends multiple requests to Google, each retrieving one week of hourly data. It seems like this would be the only way to get historical, hourly data. 
+
+* [Interest by Region](#interest-by-region): returns data for where the keyword is most searched as shown on Google Trends' Interest by Region section.
+
+* [Related Topics](#related-topics): returns data for the related keywords to a provided keyword shown on Google Trends' Related Topics section.
+
+* [Related Queries](#related-queries): returns data for the related keywords to a provided keyword shown on Google Trends' Related Queries section.
+
+* [Trending Searches](#trending-searches): returns data for latest trending searches shown on Google Trends' Trending Searches section.
+
+* [Top Charts](#top-charts): returns the data for a given topic shown in Google Trends' Top Charts section.
+
+* [Suggestions](#suggestions): returns a list of additional suggested keywords that can be used to refine a trend search.
+
+<sub><sup>[back to top](#api-methods)</sub></sup>
+
+## Common API parameters
+
+Many API methods use the following:
+
+* `kw_list`
+
+  - keywords to get data for
+  - Example ```['Pizza']```
+  - Up to five terms in a list: ```['Pizza', 'Italian', 'Spaghetti', 'Breadsticks', 'Sausage']```
+
+    * Advanced Keywords
+
+      - When using Google Trends dashboard Google may provide suggested narrowed search terms.
+      - For example ```"iron"``` will have a drop down of ```"Iron Chemical Element, Iron Cross, Iron Man, etc"```.
+      - Find the encoded topic by using the get_suggestions() function and choose the most relevant one for you.
+      - For example: ```https://www.google.com/trends/explore#q=%2Fm%2F025rw19&cmpt=q```
+      - ```"%2Fm%2F025rw19"``` is the topic "Iron Chemical Element" to use this with pytrends
+      - You can also use `pytrends.suggestions()` to automate this.
+
+* `cat`
+
   - Category to narrow results
-  - Find available cateogies by inspecting the url when manually using Google Trends. The category starts after ```cat=``` and ends before the next ```&```
-  - For example: ```"https://www.google.com/trends/explore#q=pizza&cat=0-71"```
-  - ```"0-71"``` is the category
+  - Find available cateogies by inspecting the url when manually using Google Trends. The category starts after ```cat=``` and ends before the next ```&``` or view this [wiki page containing all available categories](https://github.com/pat310/google-trends-api/wiki/Google-Trends-Categories)
+  - For example: ```"https://www.google.com/trends/explore#q=pizza&cat=71"```
+  - ```'71'``` is the category
   - Defaults to no category
-* geo
+
+* `geo`
+
   - Two letter country abbreviation
-  - For example United States is ```"US"```
+  - For example United States is ```'US'```
   - Defaults to World
   - More detail available for States/Provinces by specifying additonal abbreviations
-  - For example: Alabama would be ```US-AL```
-  - For example: England would be ```GB-ENG```
-* tz
-  - Timezone using Etc/GMT
-  - For example US CST is ```"Etc/GMT+5"```
-* date
+  - For example: Alabama would be ```'US-AL'```
+  - For example: England would be ```'GB-ENG'```
+
+* `tz`
+
+  - Timezone Offset
+  - For example US CST is ```'360'```
+
+* `timeframe`
+
   - Date to start from
-  - Defaults to all available data, 2004 - present.
-  - Custom Timeframe Pattern:
-    - By Month: ```"MM/YYYY #m"``` where # is the number of months from that date to pull data for
-      - For example: ``"10/2009 61m"`` would get data from October 2009 to October 2014
-      - Less than 4 months will return Daily level data
-      - More than 36 months will return monthly level data
-      - 4-36 months will return weekly level data
+  - Defaults to last 5yrs, `'today 5-y'`.
+  - Everything `'all'`
+  - Specific dates, 'YYYY-MM-DD YYYY-MM-DD' example `'2016-12-14 2017-01-25'`
+  - Specific datetimes, 'YYYY-MM-DDTHH YYYY-MM-DDTHH' example `'2017-02-06T10 2017-02-12T07'`
+      - Note Time component is based off UTC
+
   - Current Time Minus Time Pattern:
-    - By Month: ```"today #-m"``` where # is the number of months from that date to pull data for
-      - For example: ``"today 61-m"`` would get data from today to 61months ago
-      - 1-3 months will return daily intervals of data
-      - 4-36 months will return weekly intervals of data
-      - 36+ months will return monthly intervals of data
+
+    - By Month: ```'today #-m'``` where # is the number of months from that date to pull data for
+      - For example: ``'today 3-m'`` would get data from today to 3months ago
       - **NOTE** Google uses UTC date as *'today'*
-    - Daily: ```"today #-d"``` where # is the number of days from that date to pull data for
-      - For example: ``"today 7-d"`` would get data from the last week
-      - 1 day will return 8min intervals of data
-      - 2-8 days will return Hourly intervals of data
-      - 8-90 days will return Daily level data
-    - Hourly: ```"now #-H"``` where # is the number of hours from that date to pull data for
-      - For example: ``"now 1-H"`` would get data from the last hour
-      - 1-3 hours will return 1min intervals of data
-      - 4-26 hours will return 8min intervals of data
-      - 27-34 hours will return 16min intervals of data
-* gprop
-  - What search data we want
+      - Seems to only work for 1, 2, 3 months only
+
+    - Daily: ```'now #-d'``` where # is the number of days from that date to pull data for
+      - For example: ``'now 7-d'`` would get data from the last week
+      - Seems to only work for 1, 7 days only
+
+    - Hourly: ```'now #-H'``` where # is the number of hours from that date to pull data for
+      - For example: ``'now 1-H'`` would get data from the last hour
+      - Seems to only work for 1, 4 hours only
+
+* `gprop`
+
+  - What Google property to filter to
+  - Example ```'images'```
   - Defaults to web searches
   - Can be ```images```, ```news```, ```youtube``` or ```froogle``` (for Google Shopping results)
 
-### Save a Report to file
-**save_csv(path, trend_name)**
 
-**Parameters**
-* path
-  - Output path
-* trend_name
-  - Human readable name for file
+<sub><sup>[back to top](#api-payload-keys)</sub></sup>
 
-### Get Google Term Suggestions
-**get_suggestions(keyword)**
+### Interest Over Time
 
-**Parameters**
-* keyword
-  - keyword to get suggestions for
+    pytrends.interest_over_time()
+
+Returns pandas.Dataframe
+
+<sub><sup>[back to top](#interest_over_time)</sub></sup>
+
+
+### Historical Hourly Interest
+
+    pytrends.get_historical_interest(kw_list, year_start=2018, month_start=1, day_start=1, hour_start=0, year_end=2018, month_end=2, day_end=1, hour_end=0, cat=0, geo='', gprop='', sleep=0)
+    
+Parameters 
+
+* `kw_list`
+
+  - *Required*
+  - list of keywords that you would like the historical data
+
+* `year_start, month_start, day_start, hour_start, year_end, month_end, day_end, hour_end`
+
+  - the time period for which you would like the historical data
   
-**Returns JSON**
-```{"default": {"topics": [{"mid": "/m/0663v","title": "Pizza","type": "Dish"}]}}```
-* Use the ```mid``` value for the keyword in future searches for a more refined trend set
-### Credits
+* `sleep`
 
-* Connecting to google code heavily based off Sal Uryasev's pyGTrends
+  - If you are rate-limited by Google, you should set this parameter to something (i.e. 60) to space off each API call. 
+  
+Returns pandas.Dataframe
+
+<sub><sup>[back to top](#historical-hourly-interest)</sub></sup>
+
+### Interest by Region
+
+    pytrends.interest_by_region(resolution='COUNTRY')
+
+Parameters
+
+* `resolution`
+
+  - 'CITY' returns city level data
+  - 'COUNTRY' returns country level data
+  - 'DMA'  returns Metro level data
+  - 'REGION'  returns Region level data
+
+Returns pandas.DataFrame
+
+<sub><sup>[back to top](#interest_by_region)</sub></sup>
+
+### Related Topics
+
+    pytrends.related_topics()
+
+Returns dictionary of pandas.DataFrames
+
+<sub><sup>[back to top](#related_topics)</sub></sup>
+
+### Related Queries
+
+    pytrends.related_queries()
+
+Returns dictionary of pandas.DataFrames
+
+<sub><sup>[back to top](#related_queries)</sub></sup>
+
+### Trending Searches
+
+	pytrends.trending_searches(pn='p1') # in English
+	pytrends.trending_searches(pn='p4') # in Japanese
+
+Returns pandas.DataFrame
+
+<sub><sup>[back to top](#trending_searches)</sub></sup>
+
+### Top Charts
+
+    pytrends.top_charts(date, cid, geo='US', cat='')
+
+Parameters
+
+* `date`
+
+  - *Required*
+  - YYYYMM integer or string value
+  - Example `'201611'` for November 2016 Top Chart data
+
+* `cid`
+
+  - *Required*
+  - Topic to get data for
+  - Only able to choose from those listed on https://www.google.com/trends/topcharts
+  - Example the chart 'Baseketball players `cid` is `'basketball_players'`
+
+Returns pandas.DataFrame
+
+<sub><sup>[back to top](#top_charts)</sub></sup>
+
+### Suggestions
+
+    pytrends.suggestions(keyword)
+
+Parameters
+
+* `keyword`
+
+  - *Required*
+  - keyword to get suggestions for
+
+Returns dictionary
+
+<sub><sup>[back to top](#suggestions)</sub></sup>
+
+### Categories
+
+    pytrends.categories()
+
+Returns dictionary
+
+<sub><sup>[back to top](#suggestions)</sub></sup>
+
+# Caveats
+
+* This is not an official or supported API
+* Google may change aggregation level for items with very large or very small search volume
+* Google will send you an email saying that you had a new login after running this.
+* Rate Limit is not publicly known, let me know if you have a consistent estimate
+  * One user reports that 1,400 sequential requests of a 4 hours timeframe got them to the limit. (Replicated on 2 networks)
+  * It has been tested, and 60 seconds of sleep between requests (successful or not) is the correct amount once you reach the limit.
+* For certain configurations the dependency lib certifi requires the environment variable REQUESTS_CA_BUNDLE to be explicitly set and exported. This variable must contain the path where the ca-certificates are saved or a SSLError: [SSL: CERTIFICATE_VERIFY_FAILED] error is given at runtime. 
+
+# Credits
+
+* Major JSON revision ideas taken from pat310's JavaScript library
+
+  - https://github.com/pat310/google-trends-api
+
+* Connecting to google code heavily based off Stack Overflow post
+
+  - http://stackoverflow.com/questions/6754709/logging-in-to-google-using-python
 
 * With some ideas pulled from Matt Reid's Google Trends API
+
   - https://bitbucket.org/mattreid9956/google-trend-api/overview
